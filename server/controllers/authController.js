@@ -4,10 +4,13 @@ async function user(req, res) {
   if (req.session.user) {
     res.status(200).json(req.session.user)
   }
+  else {
+    res.status(401).json("No user logged in")
+  }
 }
 
 async function registerUser(req, res) {
-  const { first_name, last_name, username, password } = req.body;
+  const {username, password } = req.body;
   const db = req.app.get("db");
 
   // Check for the username
@@ -24,8 +27,6 @@ async function registerUser(req, res) {
     const hash = await bcrypt.hashSync(password, salt)
     // store the new user into the database
     const newUser = await db.auth.registerUser([
-      first_name,
-      last_name,
       username,
       hash
     ])
@@ -33,8 +34,6 @@ async function registerUser(req, res) {
     // store the new user on session
     req.session.user = {
       user_id: newUser[0].user_id,
-      first_name: newUser[0].first_name,
-      last_name: newUser[0].last_name,
       username: newUser[0].username
     }
     console.log(req.session.user);
@@ -62,18 +61,17 @@ async function loginUser(req, res) {
     } else {
       req.session.user = {
         user_id: foundUser[0].user_id,
-        first_name: foundUser[0].first_name,
-        last_name: foundUser[0].last_name,
         username: foundUser[0].username
       }
     }
-    console.log(req.session.user);
+    console.log("Logged in", req.session.user);
     // Send back an ok with the user on session
     res.status(200).json(req.session.user)
   }
 }
 
 async function logoutUser(req, res) {
+  console.log(req.session.user, "logged out")
   req.session.destroy();
   res.sendStatus(200);
 }

@@ -9,6 +9,7 @@ const pc = require("./controllers/postsController")
 // Dotenv
 const { SERVER_PORT, SESSION_SECRET, CONNECTION_STRING } = process.env;
 // Middleware
+const auth = require('./middleware/authMiddleware');
 app.use(express.json());
 
 // Session
@@ -29,19 +30,21 @@ massive(CONNECTION_STRING).then(db => {
 
 // De-structured controllers
 const { user, registerUser, loginUser, logoutUser } = ac;
-const { allPosts, addPost, editPost, deletePost, allPostsByCategoryName } = pc;
+const { allPosts, addPost, editPost, deletePost, allPostsByCategoryName, postsById } = pc;
 // Auth Endpoints
-app.get("/auth/user", user);
-app.post("/auth/register", registerUser);
-app.post("/auth/login", loginUser);
-app.get("/auth/logout", logoutUser);
+app.get("/auth/user", user); //Works
+app.post("/auth/register", registerUser); //Works, catches duplicates
+app.post("/auth/login", loginUser); // Works
+app.get("/auth/logout", logoutUser); //Works
 
 // Posts Endpoints
-app.get("/api/posts", allPosts);
-app.post("/api/posts", addPost);
-app.put("/api/posts/:post_id", editPost);
-app.delete("/api/posts/:post_id", deletePost);
-app.get("/api/posts/:category_name", allPostsByCategoryName)
+app.get("/api/posts", auth.usersOnly, allPosts); // Works
+app.get("/api/post/:post_id", auth.usersOnly, postsById) //Works
+app.get("/api/posts/:category_name",auth.usersOnly, allPostsByCategoryName) //Works
+app.post("/api/posts", auth.usersOnly, addPost); //Works but doesnt add initial img_rating value
+app.put("/api/posts/:post_id", auth.usersOnly, editPost); //Works, allows edit img url and pet name
+app.delete("/api/posts/:post_id", auth.usersOnly, deletePost); //Works
+
 
 app.listen(SERVER_PORT, () => {
   console.log(`LOFI RADIO STATION #: ${SERVER_PORT}`)
